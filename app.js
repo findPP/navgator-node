@@ -1,0 +1,16 @@
+const Koa = require('koa')
+const serve = require('koa-static');
+const koaBody = require('koa-body')
+const router = require('./router/index.js')
+const app = new Koa()
+const path = require('path')
+console.log(path.resolve('staticFile/files'))
+app.use(serve(path.resolve('static')))
+app.use(serve(path.resolve('staticFile')))
+app.use(koaBody({multipart:true}))
+const jwt = require('./jwt')
+app.use(jwt.errorHandler)
+app.use(jwt.jwtTest())
+app.use(router.routes())
+
+app.listen(3000)
