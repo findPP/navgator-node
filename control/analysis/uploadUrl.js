@@ -11,10 +11,10 @@ const navgatorShema = mongoose.Schema({
 async function postUrl(ctx) {
     const { id, url, title, icon } = ctx.request.query;
     if (!icon) {
-        const file = ctx.request.files?ctx.request.files.file:'';
-        if(file){
-            fileUrl = await saveImage(file, id,url);
-        }else{
+        const file = ctx.request.files ? ctx.request.files.file : '';
+        if (file) {
+            fileUrl = await saveImage(file, id, url);
+        } else {
             fileUrl = '';
         }
     } else {
@@ -55,16 +55,16 @@ async function postUrl(ctx) {
 }
 
 
-async function saveImage(file, user_number,url) {
+async function saveImage(file, user_number, url) {
     let type = file.name.substring(file.name.lastIndexOf('.'));
     const reader = fs.createReadStream(file.path);
     const filePath = path.resolve('staticFile/files')
-    const upStream = fs.createWriteStream(`${filePath}/${user_number}/${md5(file.name+url)}${type}`);
+    const upStream = fs.createWriteStream(`${filePath}/${user_number}/${md5(file.name + url)}${type}`);
     reader.pipe(upStream);
     await reader.on('end', () => {
         console.log('写入完成')
     })
-    return `/files/${user_number}/${md5(file.name+url)}${type}`
+    return `/files/${user_number}/${md5(file.name + url)}${type}`
 }
 
 async function getUrlList(ctx) {
@@ -80,16 +80,16 @@ async function getUrlList(ctx) {
         throw error
     }
     try {
-        total = await Navgator.countDocuments({},(err,count) => {
-            if(err) { return console.error(err) }
-        }) 
+        total = await Navgator.countDocuments({}, (err, count) => {
+            if (err) { return console.error(err) }
+        })
         console.log(total)
     } catch (error) {
         throw error
     }
     ctx.response.status = 200;
     ctx.response.body = {
-        total :total,
+        total: total,
         data: urlList,
         message: '业务处理成功'
     }
@@ -98,7 +98,7 @@ async function deleteUrl(ctx) {
     const { id, urlId } = ctx.request.body;
     const Navgator = mongoose.model(id, navgatorShema);
     try {
-        let res = await Navgator.findOne({_id:urlId})
+        let res = await Navgator.findOne({ _id: urlId })
         await deleteImage(res.imgUrl)
     } catch (error) {
         throw error
@@ -116,21 +116,57 @@ async function deleteUrl(ctx) {
     }
 }
 
-async function deleteImage(url){
+async function deleteImage(url) {
     let regExp = new RegExp(/^\/files/);
-    if(regExp.test(url)){
+    if (regExp.test(url)) {
         url = url.substring(1)
         console.log(url)
         console.log(fs.existsSync(url))
-        if(fs.existsSync(url)){
+        if (fs.existsSync(url)) {
             try {
-                await fs.unlinkSync (url,()=>{})
+                await fs.unlinkSync(url, () => { })
             } catch (error) {
                 throw error
             }
-        } 
+        }
+    }
+}
+
+async function updateUrl(ctx) {
+    const { id, urlId, title, icon, url } = ctx.request.body;
+    const file = ctx.request.files ? ctx.request.files.file : '';
+    let fileUrl, deleteFlag;
+    if (file) {
+        fileUrl = await saveImage(file, id, url);
+        deleteFlag = true;
+    } else {
+        fileUrl = icon
+    }
+    const Navgator = mongoose.model(id, navgatorShema);
+    let res;
+    try {
+        res = await Navgator.findOne({ _id: urlId })
+    } catch (error) {
+        throw error
+    }
+    if (deleteFlag) {
+        let regexp2 = new RegExp(/^\//g)
+        if(regexp2.test(res.imgUrl)){
+            await deleteImage(res.imgUrl)
+        }
+        
+    }
+    await Navgator.update({_id: urlId},{ url: url, title: title, imgUrl: fileUrl, order: res.order },(err,docx) => {
+        if(err){
+            console.log(err)
+        }
+    })
+    ctx.response.status = 200
+    ctx.response.body = {
+        data: 'success',
+        message: '链接修改成功'
     }
 }
 
 
-module.exports = { postUrl, getUrlList, deleteUrl }
+module.exports = { postUrl, getUrlList, deleteUrl, updateUrl }

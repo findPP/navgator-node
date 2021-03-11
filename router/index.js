@@ -21,6 +21,6 @@ koaRouter.post('/api/postUrl',control.postUrl)
 koaRouter.post('/api/getUrlList',control.getUrlList)
 //删除url
 koaRouter.post('/api/deleteUrl',control.deleteUrl)
-//
-// koaRouter.get('/files',control.readFile)
+//更新url
+koaRouter.post('/api/updateUrl',control.updateUrl)
 module.exports = koaRouter
