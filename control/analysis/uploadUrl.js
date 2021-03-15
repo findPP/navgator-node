@@ -83,7 +83,6 @@ async function getUrlList(ctx) {
         total = await Navgator.countDocuments({}, (err, count) => {
             if (err) { return console.error(err) }
         })
-        console.log(total)
     } catch (error) {
         throw error
     }
@@ -105,7 +104,6 @@ async function deleteUrl(ctx) {
     }
     try {
         let res = await Navgator.deleteOne({ _id: urlId })
-        console.log(res)
     } catch (error) {
         throw error
     }
@@ -119,12 +117,11 @@ async function deleteUrl(ctx) {
 async function deleteImage(url) {
     let regExp = new RegExp(/^\/files/);
     if (regExp.test(url)) {
-        url = url.substring(1)
-        console.log(url)
-        console.log(fs.existsSync(url))
+        url = `staticFile`+url
         if (fs.existsSync(url)) {
             try {
-                await fs.unlinkSync(url, () => { })
+                await fs.unlinkSync(url, () => {
+                 })
             } catch (error) {
                 throw error
             }
@@ -150,13 +147,14 @@ async function updateUrl(ctx) {
         throw error
     }
     if (deleteFlag) {
-        let regexp2 = new RegExp(/^\//g)
-        if(regexp2.test(res.imgUrl)){
+        let regexp2 = new RegExp(/^\//)
+        let flag = regexp2.test(res.imgUrl);
+        if(flag){
             await deleteImage(res.imgUrl)
         }
         
     }
-    await Navgator.update({_id: urlId},{ url: url, title: title, imgUrl: fileUrl, order: res.order },(err,docx) => {
+    await Navgator.updateOne({_id: urlId},{ url: url, title: title, imgUrl: fileUrl, order: res.order },(err,docx) => {
         if(err){
             console.log(err)
         }
